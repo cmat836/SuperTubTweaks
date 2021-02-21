@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "supertubtweaks:block/mana_reinforced_me_controller"
+  }
+}

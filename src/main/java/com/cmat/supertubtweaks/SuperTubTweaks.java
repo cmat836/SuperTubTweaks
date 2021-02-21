@@ -1,36 +1,25 @@
 package com.cmat.supertubtweaks;
 
-import mekanism.api.MekanismAPI;
-import mekanism.api.chemical.slurry.EmptySlurry;
+import com.cmat.supertubtweaks.item.ItemEeep;
 
 import java.lang.reflect.Array;
-import java.lang.reflect.Type;
 import java.util.*;
-import java.util.function.UnaryOperator;
+
 import mekanism.api.chemical.slurry.Slurry;
-import mekanism.api.chemical.slurry.SlurryBuilder;
 import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
 import net.minecraft.block.FlowingFluidBlock;
 import net.minecraft.block.material.Material;
 import net.minecraft.fluid.Fluid;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.fluid.WaterFluid;
-import net.minecraft.item.BucketItem;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemGroup;
-import net.minecraft.item.Items;
+import net.minecraft.item.*;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Tuple;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.Tags;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fluids.FluidAttributes;
 import net.minecraftforge.fluids.ForgeFlowingFluid;
-import net.minecraftforge.fml.InterModComms;
 import net.minecraftforge.fml.RegistryObject;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -43,15 +32,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import java.util.stream.Collectors;
-import it.zerono.mods.extremereactors.api.coolant.FluidMappingsRegistry;
-import it.zerono.mods.extremereactors.api.coolant.FluidsRegistry;
-import it.zerono.mods.extremereactors.api.coolant.TransitionsRegistry;
 import it.zerono.mods.extremereactors.api.reactor.*;
-
-import it.zerono.mods.extremereactors.api.ExtremeReactorsAPI;
-
-import javax.annotation.Resource;
 
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod("supertubtweaks")
@@ -66,6 +47,7 @@ public class SuperTubTweaks
 
     public static final LinkedHashMap<String, RegistryObject<Item>> customItems = new LinkedHashMap<String, RegistryObject<Item>>();
     public static final LinkedHashMap<String, FluidRegisterHandle> customFluids = new LinkedHashMap<String, FluidRegisterHandle>();
+    public static final LinkedHashMap<String, Tuple<RegistryObject<Block>, RegistryObject<Item>>> customBlocks = new LinkedHashMap<>();
 
     public SuperTubTweaks() {
         // Register the setup method for modloading
@@ -86,88 +68,9 @@ public class SuperTubTweaks
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
         modEventBus.addGenericListener(Slurry.class, this::registerSlurries);
 
-        ArrayList<String> itemNames = new ArrayList<String>();
-
-        ArrayList<String> ores0 = new ArrayList<String>();
-        Collections.addAll(ores0, "gold", "iron", "copper", "lead", "tin", "osmium", "uranium");
-
-        ArrayList<String> ores1 = new ArrayList<String>();
-        Collections.addAll(ores1, "starmetal", "zinc", "silver", "bauxite", "monazite", "oratchalcum", "netherite_scrap", "nickel");
-
-        ArrayList<String> ores2 = new ArrayList<String>();
-        Collections.addAll(ores2, "coal", "lapis", "redstone", "fluorite", "inferium", "soulium", "cheese", "apatite", "niter", "sulfur", "biotite", "bitumen");
-
-        ArrayList<String> ores3 = new ArrayList<String>();
-        Collections.addAll(ores3, "diamond", "emerald", "quartz", "certus", "chargedcertus", "arcanegem", "sapphire", "amethyst", "prosperity","dimensionalshard", "ratlanteangem", "cinnabar", "aquamarine");
-
-        ArrayList<Tuple<String, Integer>> fluids = new ArrayList<>();
-        Collections.addAll(fluids,
-                new Tuple<>("diamond", -11866662),
-                new Tuple<>("emerald", -15213213),
-                new Tuple<>("quartz", -2239289),
-                new Tuple<>("certus", -5648942),
-                new Tuple<>("chargedcertus", -2101764),
-                new Tuple<>("sapphire", -10781202),
-                new Tuple<>("arcanegem", -2913351),
-                new Tuple<>("amethyst", -3169047),
-                new Tuple<>("prosperity", -2031873),
-                new Tuple<>("dimensionalshard", -8072752),
-                new Tuple<>("ratlanteangem", -6423701),
-                new Tuple<>("cinnabar", -5627604),
-                new Tuple<>("aquamarine", -16733478));
-
-        for (String ore : ores0) {
-            itemNames.add("crushed/crushed_" + ore);
-        }
-
-        for (String ore : ores1) {
-            itemNames.add("crushed/crushed_" + ore);
-            itemNames.add("crystal/crystal_" + ore);
-            itemNames.add("shard/shard_" + ore);
-            itemNames.add("clump/clump_" + ore);
-            itemNames.add("dirtydust/dirtydust_" + ore);
-            itemNames.add("dust/dust_" + ore);
-        }
-
-        for (String ore : ores2) {
-            itemNames.add("crushed/crushed_" + ore);
-            itemNames.add("blazeinfused/blazeinfused_" + ore);
-            itemNames.add("charredpowder/charredpowder_" + ore);
-            itemNames.add("revivedpowder/revivedpowder_" + ore);
-        }
-
-        for (String ore : ores3) {
-            itemNames.add("crushed/crushed_" + ore);
-            itemNames.add("smallgem/smallgem_" + ore);
-        }
-
-        itemNames.add("refined_uranium");
-
-        for (String name: itemNames) {
-            customItems.put(name, itemRegister.register(
-                    name,
-                    () -> new Item(new Item.Properties().group(ItemGroup.MISC))
-            ));
-        }
-
-        for (Tuple<String, Integer> fluid: fluids) {
-            String name = "starliquid_" + fluid.getA();
-            FluidAttributes.Builder builder = FluidAttributes.builder(new ResourceLocation("supertubtweaks", "liquid/liquid"), new ResourceLocation("supertubtweaks", "liquid/liquid_flow"));
-            builder.color(fluid.getB());
-            builder.overlay(new ResourceLocation("minecraft", "block/water_overlay"));
-            FluidRegisterHandle<ForgeFlowingFluid.Source, ForgeFlowingFluid.Flowing, FlowingFluidBlock, BucketItem> fluidregisterhandle = new FluidRegisterHandle<>("supertubtweaks", name);
-            ForgeFlowingFluid.Properties properties = new ForgeFlowingFluid.Properties(
-                    fluidregisterhandle::getStillFluid,
-                    fluidregisterhandle::getFlowingFluid,
-                    builder).bucket(fluidregisterhandle::getBucket).block(fluidregisterhandle::getBlock);
-            fluidregisterhandle.updateStill(fluidRegister.register(name, () -> new ForgeFlowingFluid.Source(properties)));
-            fluidregisterhandle.updateFlowing(fluidRegister.register(name + "_flowing", () -> new ForgeFlowingFluid.Flowing(properties)));
-            fluidregisterhandle.updateBucket(itemRegister.register(name + "_bucket", () -> new BucketItem(fluidregisterhandle::getStillFluid, new Item.Properties().group(ItemGroup.MISC).maxStackSize(1).containerItem(Items.BUCKET))));
-            fluidregisterhandle.updateBlock(blockRegister.register(name, () -> new FlowingFluidBlock(
-                    fluidregisterhandle::getStillFluid,
-                    AbstractBlock.Properties.create(Material.WATER).doesNotBlockMovement().hardnessAndResistance(100.0F).noDrops())));
-            customFluids.put(name, fluidregisterhandle);
-        }
+        doItemRegister();
+        doFluidRegister();
+        doBlockRegister();
     }
 
     public void registerSlurries(RegistryEvent.Register<Slurry> event) {
@@ -211,8 +114,107 @@ public class SuperTubTweaks
         event.getRegistry().register(silverdirty.setRegistryName(new ResourceLocation("supertubtweaks", "silver_slurry_dirty")));
     }
 
-    private void setup(final FMLCommonSetupEvent event)
-    {
+    private void doItemRegister() {
+        ArrayList<String> itemNames = new ArrayList<String>();
+
+        ArrayList<String> ores0 = new ArrayList<String>();
+        Collections.addAll(ores0, "gold", "iron", "copper", "lead", "tin", "osmium", "uranium");
+
+        ArrayList<String> ores1 = new ArrayList<String>();
+        Collections.addAll(ores1, "starmetal", "zinc", "silver", "bauxite", "monazite", "oratchalcum", "netherite_scrap", "nickel");
+
+        ArrayList<String> ores2 = new ArrayList<String>();
+        Collections.addAll(ores2, "coal", "lapis", "redstone", "fluorite", "inferium", "soulium", "cheese", "apatite", "niter", "sulfur", "biotite", "bitumen");
+
+        ArrayList<String> ores3 = new ArrayList<String>();
+        Collections.addAll(ores3, "diamond", "emerald", "quartz", "certus", "chargedcertus", "arcanegem", "sapphire", "amethyst", "prosperity","dimensionalshard", "ratlanteangem", "cinnabar", "aquamarine");
+
+        for (String ore : ores0) {
+            itemNames.add("crushed/crushed_" + ore);
+        }
+
+        for (String ore : ores1) {
+            itemNames.add("crushed/crushed_" + ore);
+            itemNames.add("crystal/crystal_" + ore);
+            itemNames.add("shard/shard_" + ore);
+            itemNames.add("clump/clump_" + ore);
+            itemNames.add("dirtydust/dirtydust_" + ore);
+            itemNames.add("dust/dust_" + ore);
+        }
+
+        for (String ore : ores2) {
+            itemNames.add("crushed/crushed_" + ore);
+            itemNames.add("blazeinfused/blazeinfused_" + ore);
+            itemNames.add("charredpowder/charredpowder_" + ore);
+            itemNames.add("revivedpowder/revivedpowder_" + ore);
+        }
+
+        for (String ore : ores3) {
+            itemNames.add("crushed/crushed_" + ore);
+            itemNames.add("smallgem/smallgem_" + ore);
+        }
+
+        itemNames.add("refined_uranium");
+
+        for (String name: itemNames) {
+            customItems.put(name, itemRegister.register(
+                    name,
+                    () -> new Item(new Item.Properties().group(ItemGroup.MISC))
+            ));
+        }
+
+        customItems.put("eeep", itemRegister.register("eeep", () -> new ItemEeep(new Item.Properties().group(ItemGroup.MISC))));
+    }
+
+    private void doFluidRegister() {
+        ArrayList<Tuple<String, Integer>> fluids = new ArrayList<>();
+        Collections.addAll(fluids,
+                new Tuple<>("diamond", -11866662),
+                new Tuple<>("emerald", -15213213),
+                new Tuple<>("quartz", -2239289),
+                new Tuple<>("certus", -5648942),
+                new Tuple<>("chargedcertus", -2101764),
+                new Tuple<>("sapphire", -10781202),
+                new Tuple<>("arcanegem", -2913351),
+                new Tuple<>("amethyst", -3169047),
+                new Tuple<>("prosperity", -2031873),
+                new Tuple<>("dimensionalshard", -8072752),
+                new Tuple<>("ratlanteangem", -6423701),
+                new Tuple<>("cinnabar", -5627604),
+                new Tuple<>("molten_iron", -2536683),
+                new Tuple<>("aquamarine", -16733478));
+
+        for (Tuple<String, Integer> fluid: fluids) {
+            String name = "starliquid_" + fluid.getA();
+            FluidAttributes.Builder builder = FluidAttributes.builder(new ResourceLocation("supertubtweaks", "liquid/liquid"), new ResourceLocation("supertubtweaks", "liquid/liquid_flow"));
+            builder.color(fluid.getB());
+            builder.overlay(new ResourceLocation("minecraft", "block/water_overlay"));
+            FluidRegisterHandle<ForgeFlowingFluid.Source, ForgeFlowingFluid.Flowing, FlowingFluidBlock, BucketItem> fluidregisterhandle = new FluidRegisterHandle<>("supertubtweaks", name);
+            ForgeFlowingFluid.Properties properties = new ForgeFlowingFluid.Properties(
+                    fluidregisterhandle::getStillFluid,
+                    fluidregisterhandle::getFlowingFluid,
+                    builder).bucket(fluidregisterhandle::getBucket).block(fluidregisterhandle::getBlock);
+            fluidregisterhandle.updateStill(fluidRegister.register(name, () -> new ForgeFlowingFluid.Source(properties)));
+            fluidregisterhandle.updateFlowing(fluidRegister.register(name + "_flowing", () -> new ForgeFlowingFluid.Flowing(properties)));
+            fluidregisterhandle.updateBucket(itemRegister.register(name + "_bucket", () -> new BucketItem(fluidregisterhandle::getStillFluid, new Item.Properties().group(ItemGroup.MISC).maxStackSize(1).containerItem(Items.BUCKET))));
+            fluidregisterhandle.updateBlock(blockRegister.register(name, () -> new FlowingFluidBlock(
+                    fluidregisterhandle::getStillFluid,
+                    AbstractBlock.Properties.create(Material.WATER).doesNotBlockMovement().hardnessAndResistance(100.0F).noDrops())));
+            customFluids.put(name, fluidregisterhandle);
+        }
+    }
+
+    private void doBlockRegister() {
+        ArrayList<String> blockNames = new ArrayList<>();
+        blockNames.add("mana_reinforced_me_controller");
+
+        for (String name: blockNames) {
+            RegistryObject<Block> b = blockRegister.register(name, () -> new Block(AbstractBlock.Properties.create(Material.IRON)));
+            customBlocks.put(name, new Tuple<>(b, itemRegister.register(name, () -> new BlockItem(b.get(), new Item.Properties().group(ItemGroup.MISC)))));
+        }
+    }
+
+    private void setup(final FMLCommonSetupEvent event) {
         ReactantMappingsRegistry.removeSolid(new ResourceLocation("forge", "ingots/yellorium"));
         ReactantMappingsRegistry.removeSolid(new ResourceLocation("forge", "storage_blocks/yellorium"));
         ReactantMappingsRegistry.removeSolid(new ResourceLocation("forge", "ingots/cyanite"));
@@ -233,32 +235,16 @@ public class SuperTubTweaks
     }
 
     private void doClientStuff(final FMLClientSetupEvent event) {
-        /*
-        // do something that can only be done on the client
-        LOGGER.info("Got game settings {}", event.getMinecraftSupplier().get().gameSettings);
-         */
     }
 
-    private void enqueueIMC(final InterModEnqueueEvent event)
-    {
-        /*
-        // some example code to dispatch IMC to another mod
-        InterModComms.sendTo("examplemod", "helloworld", () -> { LOGGER.info("Hello world from the MDK"); return "Hello world";});
-         */
+    private void enqueueIMC(final InterModEnqueueEvent event) {
     }
 
-    private void processIMC(final InterModProcessEvent event)
-    {
-        // some example code to receive and process InterModComms from other mods
-        LOGGER.info("Got IMC {}", event.getIMCStream().
-                map(m->m.getMessageSupplier().get()).
-                collect(Collectors.toList()));
+    private void processIMC(final InterModProcessEvent event) {
     }
     // You can use SubscribeEvent and let the Event Bus discover methods to call
     @SubscribeEvent
     public void onServerStarting(FMLServerStartingEvent event) {
-        // do something when the server starts
-        LOGGER.info("HELLO from server starting");
     }
 
     // You can use EventBusSubscriber to automatically subscribe events on the contained class (this is subscribing to the MOD
